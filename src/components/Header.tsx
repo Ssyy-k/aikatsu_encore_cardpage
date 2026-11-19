@@ -49,7 +49,7 @@ export function Header({ tab, onTab, selectedCount, showAdmin = false }: Props) 
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <p className="rounded-2xl bg-white/90 px-4 py-3 text-[13px] leading-relaxed text-ink ring-1 ring-lilac-200 shadow-sm sm:text-sm">
-          <span className="font-bold text-blush-600">판매 중인 카드 목록</span>이에요. 갖고 싶은 카드를 눌러 선택한 뒤,{' '}
+          <span className="font-bold text-blush-600">현재 공개된 카드 목록</span>이에요. 원하는 카드를 눌러 선택한 뒤,{' '}
           <span className="font-semibold text-ink">이미지 저장</span>에서 한 장의 이미지로 저장해 보내 주세요.
         </p>
       </div>
