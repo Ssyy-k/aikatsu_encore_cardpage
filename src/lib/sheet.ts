@@ -11,7 +11,7 @@ export const DEFAULT_SHEET: SheetSettings = {
   gap: 24,
   padding: 40,
   background: '#ffffff',
-  labelMode: 'none',
+  labelMode: 'both',
 };
 
 export const BACKGROUND_PRESETS: { label: string; value: string }[] = [

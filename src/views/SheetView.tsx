@@ -47,7 +47,7 @@ const PHASE_LABEL: Record<ExportPhase, string> = {
 
 export function SheetView({ selectedCards, selection, onGoGallery, onGoSelected }: Props) {
   const toast = useToast();
-  const [settings, setSettings] = useLocalStorageState<SheetSettings>('aikatsu-encore.sheet.v1', DEFAULT_SHEET, validateSettings);
+  const [settings, setSettings] = useLocalStorageState<SheetSettings>('aikatsu-encore.sheet.v2', DEFAULT_SHEET, validateSettings);
   const update = <K extends keyof SheetSettings>(key: K, value: SheetSettings[K]) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
 
