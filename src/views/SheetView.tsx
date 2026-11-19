@@ -34,8 +34,9 @@ function validateSettings(v: SheetSettings): SheetSettings {
   if (![3, 4, 5, 6].includes(s.columns)) s.columns = 4;
   if (!['none', 'name', 'number', 'both'].includes(s.labelMode)) s.labelMode = 'none';
   if (typeof s.background !== 'string' || !/^#[0-9a-f]{6}$/i.test(s.background)) s.background = '#ffffff';
-  s.gap = Math.min(120, Math.max(0, Number(s.gap) || 0));
-  s.padding = Math.min(160, Math.max(0, Number(s.padding) || 0));
+  // 간격·여백은 고정값 사용 (설정 메뉴 없음)
+  s.gap = DEFAULT_SHEET.gap;
+  s.padding = DEFAULT_SHEET.padding;
   return s;
 }
 
@@ -199,32 +200,6 @@ export function SheetView({ selectedCards, selection, onGoGallery, onGoSelected 
             value={settings.columns}
             onChange={(v) => update('columns', v)}
             options={[3, 4, 5, 6].map((n) => ({ value: n as SheetSettings['columns'], label: `${n}장` }))}
-          />
-        </Field>
-
-        <Field label="카드 간격" value={`${settings.gap}`}>
-          <input
-            type="range"
-            min={0}
-            max={120}
-            step={2}
-            value={settings.gap}
-            onChange={(e) => update('gap', Number(e.target.value))}
-            className="range w-full"
-            aria-label="카드 간격"
-          />
-        </Field>
-
-        <Field label="바깥 여백" value={`${settings.padding}`}>
-          <input
-            type="range"
-            min={0}
-            max={160}
-            step={4}
-            value={settings.padding}
-            onChange={(e) => update('padding', Number(e.target.value))}
-            className="range w-full"
-            aria-label="바깥 여백"
           />
         </Field>
 
