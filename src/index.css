@@ -18,8 +18,8 @@
   --color-lilac-500: #9273ea;
   --color-lilac-600: #7a58d6;
 
-  --color-ink: #33263d;
-  --color-ink-soft: #7a6a85;
+  --color-ink: #261a33;
+  --color-ink-soft: #594a68;
 
   --font-sans:
     'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR',
@@ -33,11 +33,11 @@
   }
   body {
     @apply font-sans text-ink antialiased;
-    background-color: #fff7fb;
+    background-color: #eee6ff;
     background-image:
-      radial-gradient(1200px 500px at 10% -10%, #ffe1ef 0%, transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, #ece3ff 0%, transparent 55%),
-      linear-gradient(180deg, #fff7fb 0%, #fbf7ff 100%);
+      radial-gradient(1100px 520px at 0% -10%, #f9dcf0 0%, transparent 60%),
+      radial-gradient(1000px 600px at 100% 0%, #d9c8ff 0%, transparent 60%),
+      linear-gradient(180deg, #ece2ff 0%, #e4d8ff 55%, #eadfff 100%);
     background-attachment: fixed;
   }
   button:not(:disabled),
@@ -48,7 +48,7 @@
 
 @layer components {
   .brand-title {
-    background: linear-gradient(100deg, #f45fa4 0%, #ff86bd 35%, #ad92f7 75%, #9273ea 100%);
+    background: linear-gradient(100deg, #e0408a 0%, #c45ab8 40%, #8a5ee6 75%, #6d47d4 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

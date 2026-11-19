@@ -11,7 +11,7 @@ interface Props {
   cards: Card[];
   loaded: boolean;
   selection: SelectionApi;
-  onGoAdmin: () => void;
+  onGoAdmin?: () => void;
 }
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
@@ -60,18 +60,14 @@ export function GalleryView({ cards, loaded, selection, onGoAdmin }: Props) {
     return (
       <EmptyState
         icon={<CardIcon size={30} />}
-        title="아직 등록된 카드가 없어요"
-        description={
-          <>
-            판매할 카드 사진이 등록되면 이곳에 표시돼요.
-            <br />
-            관리 화면에서 카드 사진을 등록해 주세요.
-          </>
-        }
+        title={onGoAdmin ? '아직 등록된 카드가 없어요' : '카드를 준비하고 있어요'}
+        description="판매할 카드가 등록되면 이곳에 표시돼요."
         action={
-          <Button variant="primary" onClick={onGoAdmin}>
-            <SettingsIcon size={17} /> 카드 등록하러 가기
-          </Button>
+          onGoAdmin && (
+            <Button variant="primary" onClick={onGoAdmin}>
+              <SettingsIcon size={17} /> 카드 등록하러 가기
+            </Button>
+          )
         }
       />
     );

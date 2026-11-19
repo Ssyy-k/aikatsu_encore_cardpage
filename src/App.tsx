@@ -10,7 +10,9 @@ import { SelectedView } from './views/SelectedView';
 import { SheetView } from './views/SheetView';
 import { AdminView } from './views/AdminView';
 
-const TAB_KEYS: TabKey[] = ['gallery', 'selected', 'sheet', 'admin'];
+// 손님용 사이트: 카드 관리 탭은 숨김 (카드는 GitHub의 src/assets/cards 폴더로 관리)
+const SHOW_ADMIN = false;
+const TAB_KEYS: TabKey[] = SHOW_ADMIN ? ['gallery', 'selected', 'sheet', 'admin'] : ['gallery', 'selected', 'sheet'];
 
 function readHash(): TabKey {
   const h = window.location.hash.replace('#', '') as TabKey;
@@ -56,14 +58,14 @@ function AppInner() {
 
   return (
     <div className="min-h-dvh">
-      <Header tab={tab} onTab={setTab} selectedCount={selectedCards.length} />
+      <Header tab={tab} onTab={setTab} selectedCount={selectedCards.length} showAdmin={SHOW_ADMIN} />
 
       <main className={`mx-auto max-w-7xl px-3 pt-5 sm:px-6 sm:pt-6 ${showFloatingBar ? 'pb-32' : 'pb-16'}`}>
         {api.dbError && tab !== 'admin' && (
           <div className="mb-4 rounded-2xl bg-rose-50 p-3 text-xs text-rose-700 ring-1 ring-rose-200">{api.dbError}</div>
         )}
         {tab === 'gallery' && (
-          <GalleryView cards={api.cards} loaded={api.loaded} selection={selection} onGoAdmin={() => setTab('admin')} />
+          <GalleryView cards={api.cards} loaded={api.loaded} selection={selection} onGoAdmin={SHOW_ADMIN ? () => setTab('admin') : undefined} />
         )}
         {tab === 'selected' && (
           <SelectedView
@@ -108,7 +110,7 @@ function AppInner() {
         </div>
       )}
 
-      <footer className="pb-8 text-center text-[11px] tracking-widest text-lilac-400">AIKATSU ENCORE! · CARD COLLECTION</footer>
+      <footer className="pb-8 text-center text-[11px] tracking-widest text-lilac-600">AIKATSU ENCORE! · CARD COLLECTION</footer>
     </div>
   );
 }

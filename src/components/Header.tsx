@@ -6,6 +6,7 @@ interface Props {
   tab: TabKey;
   onTab: (tab: TabKey) => void;
   selectedCount: number;
+  showAdmin?: boolean;
 }
 
 const TABS: { key: TabKey; label: string; short: string; icon: typeof GridIcon }[] = [
@@ -15,7 +16,8 @@ const TABS: { key: TabKey; label: string; short: string; icon: typeof GridIcon }
   { key: 'admin', label: '카드 관리', short: '관리', icon: SettingsIcon },
 ];
 
-export function Header({ tab, onTab, selectedCount }: Props) {
+export function Header({ tab, onTab, selectedCount, showAdmin = false }: Props) {
+  const tabs = showAdmin ? TABS : TABS.filter((t) => t.key !== 'admin');
   return (
     <>
     <header className="relative">
@@ -25,8 +27,9 @@ export function Header({ tab, onTab, selectedCount }: Props) {
             AIKATSU ENCORE!
             <SparkleIcon size={22} className="shrink-0 text-blush-300 sm:size-7" />
           </h1>
-          <p className="mt-1.5 text-[11px] font-bold tracking-[0.42em] text-lilac-500 sm:mt-2 sm:text-sm">CARD COLLECTION</p>
+          <p className="mt-1.5 text-[11px] font-bold tracking-[0.42em] text-lilac-600 sm:mt-2 sm:text-sm">CARD COLLECTION</p>
         </button>
+        {showAdmin && (
         <button
           type="button"
           onClick={() => onTab('admin')}
@@ -41,10 +44,11 @@ export function Header({ tab, onTab, selectedCount }: Props) {
           <SettingsIcon size={17} />
           <span>관리</span>
         </button>
+        )}
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <p className="rounded-2xl bg-white/70 px-4 py-3 text-[13px] leading-relaxed text-ink-soft ring-1 ring-blush-100 sm:text-sm">
+        <p className="rounded-2xl bg-white/90 px-4 py-3 text-[13px] leading-relaxed text-ink ring-1 ring-lilac-200 shadow-sm sm:text-sm">
           <span className="font-bold text-blush-600">판매 중인 카드 목록</span>이에요. 갖고 싶은 카드를 눌러 선택한 뒤,{' '}
           <span className="font-semibold text-ink">이미지 저장</span>에서 한 장의 이미지로 저장해 보내 주세요.
         </p>
@@ -52,11 +56,11 @@ export function Header({ tab, onTab, selectedCount }: Props) {
     </header>
 
       <nav
-        className="sticky top-0 z-30 mt-4 border-b border-blush-100/80 bg-[#fff7fb]/85 backdrop-blur-md"
+        className="sticky top-0 z-30 mt-4 border-b border-lilac-200/80 bg-[#efe7ff]/90 backdrop-blur-md"
         aria-label="화면 이동"
       >
         <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-3 py-2 sm:px-6">
-          {TABS.map(({ key, label, short, icon: Icon }) => {
+          {tabs.map(({ key, label, short, icon: Icon }) => {
             const active = tab === key;
             return (
               <button
@@ -66,7 +70,7 @@ export function Header({ tab, onTab, selectedCount }: Props) {
                 aria-current={active ? 'page' : undefined}
                 className={cx(
                   'relative flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition touch-manipulation sm:flex-none sm:px-5',
-                  active ? 'bg-white text-blush-600 shadow-sm ring-1 ring-blush-200' : 'text-ink-soft hover:bg-white/60 hover:text-blush-600',
+                  active ? 'bg-white text-lilac-600 shadow-sm ring-1 ring-lilac-300' : 'text-ink hover:bg-white/70 hover:text-lilac-600',
                 )}
               >
                 <Icon size={17} />
