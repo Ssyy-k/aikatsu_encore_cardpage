@@ -20,10 +20,12 @@ interface Props {
 export function CardImage({ src, alt, width, height, className, imgClassName, rounded = 'rounded-xl' }: Props) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
 
   useEffect(() => {
     setFailed(false);
     setLoaded(false);
+    setNatural(null);
   }, [src]);
 
   const ratio = width && height ? `${width} / ${height}` : undefined;
@@ -46,10 +48,17 @@ export function CardImage({ src, alt, width, height, className, imgClassName, ro
     );
   }
 
+  // 가로 카드(액세서리 등)는 세로로 돌려서 다른 카드와 같은 크기로 표시
+  const w = natural?.w ?? width;
+  const h = natural?.h ?? height;
+  const known = !!(w && h);
+  const landscape = known && (w as number) > (h as number);
+  const boxRatio = known ? (landscape ? `${h} / ${w}` : `${w} / ${h}`) : '63 / 88';
+
   return (
     <div
       className={cx('relative w-full overflow-hidden', rounded, !loaded && 'bg-blush-50/70', className)}
-      style={ratio ? { aspectRatio: ratio } : undefined}
+      style={{ aspectRatio: boxRatio }}
     >
       <img
         src={src}
@@ -57,15 +66,29 @@ export function CardImage({ src, alt, width, height, className, imgClassName, ro
         loading="lazy"
         decoding="async"
         draggable={false}
-        onLoad={() => setLoaded(true)}
+        onLoad={(e) => {
+          const el = e.currentTarget;
+          if (el.naturalWidth && el.naturalHeight) setNatural({ w: el.naturalWidth, h: el.naturalHeight });
+          setLoaded(true);
+        }}
         onError={() => setFailed(true)}
         className={cx(
-          'block w-full select-none transition-opacity duration-300',
-          ratio ? 'h-full object-contain' : 'h-auto',
+          'absolute block select-none transition-opacity duration-300',
           loaded ? 'opacity-100' : 'opacity-0',
           imgClassName,
         )}
-        style={!ratio && !loaded ? { aspectRatio: '63 / 88' } : undefined}
+        style={
+          landscape
+            ? {
+                top: '50%',
+                left: '50%',
+                width: `${((w as number) / (h as number)) * 100}%`,
+                height: 'auto',
+                maxWidth: 'none',
+                transform: 'translate(-50%, -50%) rotate(90deg)',
+              }
+            : { inset: 0, width: '100%', height: '100%', objectFit: 'contain' }
+        }
       />
     </div>
   );
