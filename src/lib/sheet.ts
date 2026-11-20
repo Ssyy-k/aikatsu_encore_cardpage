@@ -31,8 +31,11 @@ const REF_WIDTH = 600;
 export type SheetItem = Pick<Card, 'id' | 'name' | 'number' | 'src' | 'thumbSrc' | 'width' | 'height'>;
 
 export interface SheetMetric {
+  /** 저장 이미지에 놓일 때의 세로/가로 비율 */
   aspect: number;
   width: number;
+  /** 가로 카드를 세로로 돌려서 그리는지 */
+  rotate: boolean;
 }
 
 export interface SheetLayout {
@@ -101,13 +104,20 @@ export async function loadImages(
 }
 
 export function metricFor(item: SheetItem, img: HTMLImageElement | null): SheetMetric {
-  // 원본 크기 정보가 있으면 우선 사용 (썸네일 반올림 오차 없이 미리보기 = 저장 결과)
-  let aspect = FALLBACK_ASPECT;
-  if (item.width && item.height) aspect = item.height / item.width;
-  else if (img && img.naturalWidth && img.naturalHeight) aspect = img.naturalHeight / img.naturalWidth;
-  // 원본 해상도: 저장된 값 → (썸네일이 아닌 경우) 실제 이미지 크기
-  const width = item.width ?? (img && item.thumbSrc === item.src ? img.naturalWidth : 0) ?? 0;
-  return { aspect, width: width || REF_WIDTH };
+  // 원본 크기: 저장된 값 → 실제 이미지 크기 (썸네일도 비율은 같음)
+  let w = item.width ?? 0;
+  let h = item.height ?? 0;
+  if (!(w && h) && img && img.naturalWidth && img.naturalHeight) {
+    w = img.naturalWidth;
+    h = img.naturalHeight;
+  }
+  if (!(w && h)) return { aspect: FALLBACK_ASPECT, width: REF_WIDTH, rotate: false };
+  // 원본 해상도 기준 폭: 썸네일이면 저장된 원본 폭, 아니면 실제 크기
+  const fullW = item.width ?? (img && item.thumbSrc === item.src ? w : 0);
+  const fullH = item.height ?? (img && item.thumbSrc === item.src ? h : 0);
+  // 저장 이미지에서는 가로 카드(액세서리 등)를 세로로 돌려 다른 카드와 크기를 맞춤
+  if (w > h) return { aspect: w / h, width: fullH || REF_WIDTH, rotate: true };
+  return { aspect: h / w, width: fullW || REF_WIDTH, rotate: false };
 }
 
 // ─── 레이아웃 ───────────────────────────────────────────────
@@ -280,7 +290,14 @@ export async function drawSheet(
     const iy = top + (rowImgH[r] - imgH) / 2;
     const img = images[i];
 
-    if (img) {
+    if (img && metrics[i].rotate) {
+      // 시계 방향 90° 회전
+      ctx.save();
+      ctx.translate(x + cellW / 2, iy + imgH / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(img, -imgH / 2, -cellW / 2, imgH, cellW);
+      ctx.restore();
+    } else if (img) {
       ctx.drawImage(img, x, iy, cellW, imgH);
     } else {
       ctx.save();
