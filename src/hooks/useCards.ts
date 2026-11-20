@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Card, CardRecord } from '../types';
 import { deleteCardRecords, getAllCards, getMeta, putCards, setMeta } from '../lib/db';
 import { localCardFiles, localCardUrlByFile } from '../lib/localCards';
+
+// 기본 카드(폴더 카드)는 항상 파일 이름(카드 번호) 순서로 표시
+const localOrder = new Map(localCardFiles.map((f, i) => [f.file, i]));
+const UPLOAD_ORDER_BASE = 1_000_000;
 import { processImage } from '../lib/image';
 import { createId, nextFrame, parseFileName } from '../lib/utils';
 
@@ -134,7 +138,7 @@ export function useCards() {
         id: r.id,
         name: r.name,
         number: r.number,
-        order: r.order,
+        order: r.localFile && localOrder.has(r.localFile) ? localOrder.get(r.localFile)! : UPLOAD_ORDER_BASE + r.order,
         createdAt: r.createdAt,
         source: r.source,
         src,
