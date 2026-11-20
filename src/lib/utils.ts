@@ -26,7 +26,7 @@ export function parseFileName(fileName: string): { name: string; number: string 
   const match = stem.match(/^([^_\s]+)_(.+)$/);
   if (match) {
     const [, maybeNumber, rest] = match;
-    const looksLikeNumber = /^[A-Za-z]{0,6}[-#]?\d[\w-]*$/.test(maybeNumber) && maybeNumber.length <= 16;
+    const looksLikeNumber = /^[A-Za-z]{0,6}[-#]?\d[\w\-★☆]*$/.test(maybeNumber) && maybeNumber.length <= 16;
     const restIsOnlyDigits = /^[\d_\-\s]+$/.test(rest);
     if (looksLikeNumber && !restIsOnlyDigits) {
       return { number: maybeNumber, name: rest.replace(/_/g, ' ').trim() };
@@ -102,3 +102,43 @@ export function cx(...parts: Array<string | false | null | undefined>): string {
 }
 
 export const nextFrame = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+// ─── 세트별 자동 줄바꿈 ───────────────────────────────────────
+// 카드 이름으로 종류를 짐작해, 상의·원피스·풀코디 카드에서 새 줄을 시작합니다.
+const TOP_WORDS = ['탑스', '톱스', '톱', '탑', '캐미솔', '볼레로', '블라우스', '재킷', '자켓', '베스트', '셔츠', '가디건', '원숄더', '원피스', '교복', '저지', '드레스',
+  'トップス', 'キャミソール', 'ボレロ', 'ブラウス', 'ジャケット', 'ベスト', 'シャツ', 'カーデ', 'ワンショルダー', 'ワンピ', '制服', 'ジャージ', 'ドレス', 'チューブトップ'];
+const PART_WORDS = ['스커트', '파니에', '팬츠', '미니', '슈즈', '부츠', '펌프스', '샌들', '뮬', '로퍼', '스니커즈', '글래디에이터', '액세서리', '액세', '리본', '카추샤', '티아라',
+  'スカート', 'パニエ', 'パンツ', 'ミニ', 'シューズ', 'ブーツ', 'パンプス', 'サンダル', 'ミュール', 'ローファー', 'スニーカー', 'グラディエーター', 'アクセ', 'リボン', 'カチューシャ', 'ティアラ'];
+
+function startsNewSet(name: string): boolean {
+  if (TOP_WORDS.some((w) => name.includes(w))) return true;
+  if (PART_WORDS.some((w) => name.includes(w))) return false;
+  return true; // 종류를 알 수 없는 카드(풀코디 등)는 따로 한 줄
+}
+
+/** 이 카드 뒤에서 줄을 바꿀 카드 id 목록 */
+export function autoSetBreaks(cards: { id: string; name: string }[]): string[] {
+  const result: string[] = [];
+  for (let i = 0; i < cards.length - 1; i++) {
+    if (startsNewSet(cards[i + 1].name)) result.push(cards[i].id);
+  }
+  return result;
+}
+
+/** 세트별 정리용 순서: 같은 시리즈(E1, EP…) 안에서 일반 카드 → ★ 카드, 각각 번호순 */
+export function sortForSets<T extends { number: string; name: string; order: number }>(cards: T[]): T[] {
+  const key = (c: T) => {
+    const m = c.number.match(/^([A-Za-z]*\d*)/);
+    return { series: m ? m[1] : '', star: /[★☆]/.test(c.number) ? 1 : 0 };
+  };
+  return [...cards].sort((a, b) => {
+    const ka = key(a);
+    const kb = key(b);
+    return (
+      compareText(ka.series, kb.series) ||
+      ka.star - kb.star ||
+      compareText(a.number, b.number) ||
+      a.order - b.order
+    );
+  });
+}

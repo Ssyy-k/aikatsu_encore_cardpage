@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Card, LabelMode, SheetSettings } from '../types';
 import type { SelectionApi } from '../hooks/useSelection';
 import { useLocalStorageState } from '../hooks/useLocalStorage';
-import { OrderTools } from '../components/OrderTools';
+import { BreakTools, OrderTools } from '../components/OrderTools';
 import { Button, EmptyState, Panel, Segmented } from '../components/ui';
 import { CheckIcon, DownloadIcon, GridIcon, HeartIcon, ImageIcon, RefreshIcon, SpinnerIcon } from '../components/icons';
 import { useToast } from '../components/Toast';
@@ -68,6 +68,10 @@ export function SheetView({ selectedCards, selection, onGoGallery, onGoSelected 
   );
   const itemsRef = useRef(selectedCards);
   itemsRef.current = selectedCards;
+  const breakAfter = useMemo(() => selectedCards.map((c) => selection.breakSet.has(c.id)), [selectedCards, selection.breakSet]);
+  const breaksKey = breakAfter.map((b) => (b ? 1 : 0)).join('');
+  const breakRef = useRef(breakAfter);
+  breakRef.current = breakAfter;
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -94,9 +98,9 @@ export function SheetView({ selectedCards, selection, onGoGallery, onGoSelected 
           ctrl.signal,
         );
         const metrics = items.map((it, i) => metricFor(it, images[i]));
-        const exp = computeLayout(metrics, settings, exportLimits());
+        const exp = computeLayout(metrics, settings, exportLimits(), breakRef.current);
         const dpr = Math.min(2, window.devicePixelRatio || 1);
-        const layout = computeLayout(metrics, settings, { mode: 'preview', fitWidth: Math.min(wrapW * dpr, 2400) });
+        const layout = computeLayout(metrics, settings, { mode: 'preview', fitWidth: Math.min(wrapW * dpr, 2400) }, breakRef.current);
         const off = document.createElement('canvas');
         await drawSheet(off, layout, items, images, metrics, settings, { signal: ctrl.signal });
         const visible = canvasRef.current;
@@ -128,7 +132,7 @@ export function SheetView({ selectedCards, selection, onGoGallery, onGoSelected 
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [itemsKey, settings, wrapW]);
+  }, [itemsKey, breaksKey, settings, wrapW]);
 
   // 사용하지 않는 미리보기 이미지 캐시 정리
   useEffect(() => {
@@ -143,8 +147,12 @@ export function SheetView({ selectedCards, selection, onGoGallery, onGoSelected 
     if (!selectedCards.length || exporting) return;
     setExporting({ phase: 'load', done: 0, total: selectedCards.length });
     try {
-      const result = await renderSheetBlob(selectedCards, settings, (phase, done, total) =>
-        setExporting({ phase, done, total }),
+      const result = await renderSheetBlob(
+        selectedCards,
+        settings,
+        (phase, done, total) => setExporting({ phase, done, total }),
+        undefined,
+        breakAfter,
       );
       downloadBlob(result.blob, sheetFileName());
       toast(`이미지를 저장했어요 · ${result.width.toLocaleString()}×${result.height.toLocaleString()}px`);
@@ -257,12 +265,15 @@ export function SheetView({ selectedCards, selection, onGoGallery, onGoSelected 
 
         <Field label="카드 배치 순서">
           <OrderTools selectedCards={selectedCards} selection={selection} />
+          <div className="mt-3">
+            <BreakTools selectedCards={selectedCards} selection={selection} />
+          </div>
           <button
             type="button"
             onClick={onGoSelected}
             className="mt-2 text-xs font-semibold text-lilac-600 underline-offset-2 hover:underline"
           >
-            선택 카드 화면에서 한 장씩 순서 바꾸기 →
+            선택 카드 화면에서 순서·줄바꿈 직접 바꾸기 →
           </button>
         </Field>
 

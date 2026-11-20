@@ -51,6 +51,8 @@ export interface SheetLayout {
   fontSize: number;
   labelH: number;
   rowTops: number[];
+  /** 각 카드의 행·열 위치 */
+  pos: { r: number; c: number }[];
   rowImgH: number[];
   /** 브라우저 한계 때문에 원본보다 작게 저장되는지 */
   downscaled: boolean;
@@ -116,10 +118,34 @@ function labelLines(mode: LabelMode): number {
 
 type Fit = { mode: 'export'; maxSide: number; maxArea: number } | { mode: 'preview'; fitWidth: number };
 
-export function computeLayout(metrics: SheetMetric[], settings: SheetSettings, fit: Fit): SheetLayout {
+export function computeLayout(
+  metrics: SheetMetric[],
+  settings: SheetSettings,
+  fit: Fit,
+  breakAfter: boolean[] = [],
+): SheetLayout {
   const n = metrics.length;
-  const cols = Math.max(1, Math.min(settings.columns, n || 1));
-  const rows = Math.max(1, Math.ceil(n / cols));
+  // 한 줄에 settings.columns장씩 채우되, 줄바꿈 표시가 있는 카드 뒤에서는 다음 줄로
+  const maxCols = Math.max(1, settings.columns);
+  const pos: { r: number; c: number }[] = [];
+  let curR = 0;
+  let curC = 0;
+  let widest = 0;
+  for (let i = 0; i < n; i++) {
+    if (curC >= maxCols) {
+      curR++;
+      curC = 0;
+    }
+    pos.push({ r: curR, c: curC });
+    curC++;
+    widest = Math.max(widest, curC);
+    if (breakAfter[i] && i < n - 1) {
+      curR++;
+      curC = 0;
+    }
+  }
+  const cols = Math.max(1, widest);
+  const rows = Math.max(1, n ? curR + 1 : 1);
 
   // 카드 폭 = 선택한 원본 이미지 폭의 중앙값 → 원본 해상도를 최대한 유지
   const widths = metrics.map((m) => m.width).sort((a, b) => a - b);
@@ -133,15 +159,11 @@ export function computeLayout(metrics: SheetMetric[], settings: SheetSettings, f
   const fontSize = cellW * 0.052;
   const labelH = lines ? fontSize * (0.75 + 1.45 * lines) : 0;
 
-  const rowImgH: number[] = [];
-  for (let r = 0; r < rows; r++) {
-    let h = 0;
-    for (let c = 0; c < cols; c++) {
-      const m = metrics[r * cols + c];
-      if (m) h = Math.max(h, cellW * m.aspect);
-    }
-    rowImgH.push(h || cellW * FALLBACK_ASPECT);
-  }
+  const rowImgH: number[] = new Array(rows).fill(0);
+  metrics.forEach((m, i) => {
+    rowImgH[pos[i].r] = Math.max(rowImgH[pos[i].r], cellW * m.aspect);
+  });
+  for (let r = 0; r < rows; r++) if (!rowImgH[r]) rowImgH[r] = cellW * FALLBACK_ASPECT;
   const rowTops: number[] = [];
   let y = pad;
   for (let r = 0; r < rows; r++) {
@@ -174,6 +196,7 @@ export function computeLayout(metrics: SheetMetric[], settings: SheetSettings, f
     labelH,
     rowTops,
     rowImgH,
+    pos,
     downscaled,
   };
 }
@@ -246,12 +269,11 @@ export async function drawSheet(
   const dark = isDarkColor(settings.background);
   const nameColor = dark ? '#ffffff' : '#2b2233';
   const numberColor = dark ? '#ffc2de' : '#c2477f';
-  const { cellW, gap, pad, cols, fontSize, rowTops, rowImgH } = layout;
+  const { cellW, gap, pad, fontSize, rowTops, rowImgH, pos } = layout;
 
   for (let i = 0; i < items.length; i++) {
     if (opts.signal?.aborted) throw abortError();
-    const r = Math.floor(i / cols);
-    const c = i % cols;
+    const { r, c } = pos[i];
     const x = pad + c * (cellW + gap);
     const top = rowTops[r];
     const imgH = cellW * metrics[i].aspect;
@@ -321,6 +343,7 @@ export async function renderSheetBlob(
   settings: SheetSettings,
   onProgress?: (phase: ExportPhase, done: number, total: number) => void,
   signal?: AbortSignal,
+  breakAfter: boolean[] = [],
 ): Promise<ExportResult> {
   const cache: ImageCache = new Map();
   // 원본 이미지 사용 (썸네일 X)
@@ -335,7 +358,7 @@ export async function renderSheetBlob(
     const m = metricFor({ ...item, thumbSrc: item.src }, img);
     return m;
   });
-  const layout = computeLayout(metrics, settings, exportLimits());
+  const layout = computeLayout(metrics, settings, exportLimits(), breakAfter);
   const canvas = document.createElement('canvas');
   try {
     await drawSheet(canvas, layout, items, images, metrics, settings, {

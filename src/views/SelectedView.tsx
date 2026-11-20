@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { Card } from '../types';
 import type { SelectionApi } from '../hooks/useSelection';
 import { CardImage } from '../components/CardImage';
-import { OrderTools } from '../components/OrderTools';
+import { BreakTools, OrderTools } from '../components/OrderTools';
 import { Button, EmptyState, Panel } from '../components/ui';
 import { ChevronLeftIcon, ChevronRightIcon, GridIcon, HeartIcon, ImageIcon, XIcon } from '../components/icons';
 import { cx } from '../lib/utils';
@@ -58,12 +58,19 @@ export function SelectedView({ selectedCards, selection, onGoGallery, onGoSheet 
           <span className="text-xs font-semibold text-ink-soft">순서 한 번에 정렬</span>
           <OrderTools selectedCards={selectedCards} selection={selection} />
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-ink-soft">이미지 줄바꿈</span>
+          <BreakTools selectedCards={selectedCards} selection={selection} />
+        </div>
+        <p className="mt-2 text-xs text-ink-soft">
+          <b>세트별 정리</b>를 누르면 번호순으로 정리하고 세트마다 줄을 바꿔요. 카드 아래 <b>↵</b> 버튼으로 줄바꿈을 직접 넣거나 뺄 수도 있어요.
+        </p>
       </Panel>
 
       <ol className="grid grid-cols-2 gap-3 min-[520px]:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {selectedCards.map((card, index) => (
+          <Fragment key={card.id}>
           <li
-            key={card.id}
             draggable
             onDragStart={(e) => {
               setDragId(card.id);
@@ -111,7 +118,7 @@ export function SelectedView({ selectedCards, selection, onGoGallery, onGoSheet 
               {card.number && <p className="truncate text-[11px] font-semibold tracking-wide text-lilac-500">{card.number}</p>}
               <p className="truncate text-[13px] font-semibold text-ink sm:text-sm">{card.name}</p>
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-1.5">
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
               <button
                 type="button"
                 onClick={() => selection.move(card.id, -1)}
@@ -130,8 +137,32 @@ export function SelectedView({ selectedCards, selection, onGoGallery, onGoSheet 
               >
                 <ChevronRightIcon size={18} />
               </button>
+              <button
+                type="button"
+                onClick={() => selection.toggleBreak(card.id)}
+                disabled={index === selectedCards.length - 1}
+                aria-pressed={selection.breakSet.has(card.id)}
+                className={cx(
+                  'flex h-9 items-center justify-center rounded-full text-base font-bold transition disabled:opacity-35 touch-manipulation',
+                  selection.breakSet.has(card.id)
+                    ? 'bg-lilac-500 text-white'
+                    : 'bg-lilac-50 text-lilac-600 hover:bg-lilac-100',
+                )}
+                aria-label="이 카드 다음에서 줄바꿈"
+                title="이 카드 다음에서 줄바꿈"
+              >
+                ↵
+              </button>
             </div>
           </li>
+          {selection.breakSet.has(card.id) && index < selectedCards.length - 1 && (
+            <li className="col-span-full flex items-center gap-3 py-1 text-xs font-semibold text-lilac-500" aria-hidden="true">
+              <span className="h-px flex-1 bg-lilac-300" />
+              ↵ 여기서 다음 줄
+              <span className="h-px flex-1 bg-lilac-300" />
+            </li>
+          )}
+          </Fragment>
         ))}
       </ol>
     </div>

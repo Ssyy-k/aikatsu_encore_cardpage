@@ -3,6 +3,12 @@ import { moveItem } from '../lib/utils';
 import { readStorage, writeStorage } from './useLocalStorage';
 
 const STORAGE_KEY = 'aikatsu-encore.selection.v1';
+const BREAK_KEY = 'aikatsu-encore.breaks.v1';
+
+function readIds(key: string): string[] {
+  const v = readStorage<unknown>(key, []);
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+}
 
 /**
  * 선택한 카드 id 목록(= 이미지 시트 배치 순서)을 관리하고 LocalStorage에 유지합니다.
@@ -15,6 +21,22 @@ export function useSelection(validIds: string[] | null) {
   });
 
   useEffect(() => writeStorage(STORAGE_KEY, selected), [selected]);
+
+  // 이미지 저장 시 '이 카드 뒤에서 줄바꿈'할 카드 id 목록
+  const [breaks, setBreaks] = useState<string[]>(() => readIds(BREAK_KEY));
+  useEffect(() => writeStorage(BREAK_KEY, breaks), [breaks]);
+  useEffect(() => {
+    const sel = new Set(selected);
+    setBreaks((prev) => {
+      const next = prev.filter((id) => sel.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [selected]);
+  const breakSet = useMemo(() => new Set(breaks), [breaks]);
+  const toggleBreak = useCallback((id: string) => {
+    setBreaks((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
+  const setBreakList = useCallback((ids: string[]) => setBreaks(ids), []);
 
   // 다른 탭에서 선택을 바꾸면 동기화
   useEffect(() => {
@@ -80,7 +102,21 @@ export function useSelection(validIds: string[] | null) {
 
   const setOrder = useCallback((ids: string[]) => setSelected(ids), []);
 
-  return { selected, selectedSet, toggle, selectMany, deselectMany, clear, move, moveTo, setOrder };
+  return {
+    selected,
+    selectedSet,
+    toggle,
+    selectMany,
+    deselectMany,
+    clear,
+    move,
+    moveTo,
+    setOrder,
+    breaks,
+    breakSet,
+    toggleBreak,
+    setBreakList,
+  };
 }
 
 export type SelectionApi = ReturnType<typeof useSelection>;
